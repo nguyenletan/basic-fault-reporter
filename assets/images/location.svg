@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="315" height="116" viewBox="0 0 315 116">
+  <g id="Group_5075" data-name="Group 5075" transform="translate(-30 -146)">
+    <rect id="Rectangle_3775" data-name="Rectangle 3775" width="315" height="116" rx="8" transform="translate(30 146)" fill="#edeff3"/>
+    <g id="Group_5074" data-name="Group 5074" transform="translate(7.715 8.634)">
+      <path id="Icon_carbon-floorplan" data-name="Icon carbon-floorplan" d="M94.157,2.25H9.32A7.091,7.091,0,0,0,2.25,9.32V94.157a7.091,7.091,0,0,0,7.07,7.07H62.343v-7.07A17.5,17.5,0,0,1,80.018,76.483v-7.07A24.592,24.592,0,0,0,55.273,94.157h-10.6V80.018H37.6v14.14H9.32V9.32H37.6V58.808h7.07V41.134h14.14v-7.07H44.669V9.32H94.157V34.064H80.018v7.07h14.14V94.157H80.018v7.07h14.14a7.091,7.091,0,0,0,7.07-7.07V9.32A7.091,7.091,0,0,0,94.157,2.25Z" transform="translate(81.139 144.85)" fill="#a7a7a8"/>
+      <rect id="Rectangle_3776" data-name="Rectangle 3776" width="20.235" height="20.235" transform="translate(94.426 163.564)" fill="#dc7f5a"/>
+      <path id="Icon_teeny-floorplan-solid" data-name="Icon teeny-floorplan-solid" d="M0,0H30.69L51.316,13.751l-3.656,5.49L28.7,6.6H6.6v85.78H39.591V52.788h-13.2v-6.6H59.386v6.6h-13.2V92.379H92.379V52.788h-13.2v-6.6h13.2V6.6H65.985V0H98.977V98.977H0Z" transform="translate(177.205 147.1)" fill="#a7a7a8"/>
+    </g>
+  </g>
+</svg>
