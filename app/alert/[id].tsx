@@ -257,12 +257,12 @@ export default function AlertDetailScreen() {
                 <Button
                   mode="contained"
                   icon="hammer-wrench"
-                  onPress={() => router.push(`/equipment/${alert.id}/location`)}
+                  onPress={() => router.push(`/inspection/${alert.id}/initial`)}
                   style={styles.button}
                 >
-                  Accept job
+                  Begin Inspect
                 </Button>
-                <Button
+                {/* <Button
                   mode="outlined"
                   icon="close-circle"
                   onPress={() =>
@@ -281,7 +281,7 @@ export default function AlertDetailScreen() {
                   style={styles.button}
                 >
                   Mark as Resolved
-                </Button>
+                </Button> */}
               </>
             )}
 

@@ -14,7 +14,7 @@ export function IconCard({ icon, title, iconColor, onPress }: IconCardProps) {
     <Card style={[styles.card]} mode="elevated" onPress={onPress}>
       <Card.Content style={styles.cardContent}>
         <Icon source={icon} size={56} color={iconColor || MD3Colors.primary20} />
-        <Text variant="titleLarge" style={styles.cardText} numberOfLines={2}>
+        <Text variant="headlineLarge" style={styles.cardText} numberOfLines={2}>
           {title}
         </Text>
       </Card.Content>
@@ -25,14 +25,18 @@ export function IconCard({ icon, title, iconColor, onPress }: IconCardProps) {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    height: 160,
+    height: 130,
   },
   cardContent: {
+    height: 130,
     alignItems: 'center',
     textAlign: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     gap: 8,
-    paddingTop: 18,
+    paddingTop: 34,
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   cardText: {
     textAlign: 'center',

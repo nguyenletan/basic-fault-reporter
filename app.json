@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "basic-fault-reporter",
-    "slug": "basic-fault-reporter",
+    "name": "Centasa Fault Reporter",
+    "slug": "centasa-fault-reporter",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "basicfaultreporter",
+    "scheme": "centasa-fault-reporter",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

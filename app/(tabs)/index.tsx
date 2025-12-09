@@ -12,6 +12,20 @@ export default function HomeScreen() {
         <Text variant="displaySmall" style={styles.header}>
           Alerts and Work Orders
         </Text>
+        <Card mode="elevated" onPress={() => router.push('/alert')} style={styles.urgentCard}>
+          <Card.Content style={styles.cardContent}>
+            <View style={styles.cardInner}>
+              <Text style={styles.cardNumber}>3</Text>
+              <Text variant="displaySmall" style={styles.cardText}>
+                Urgent {'\n'}
+                Fault Alert
+              </Text>
+            </View>
+            <View style={styles.cardIndicator}>
+              <Icon source="alarm-light" size={28} color={MD3Colors.error100} />
+            </View>
+          </Card.Content>
+        </Card>
         <Card mode="elevated" onPress={() => router.push('/alert')} style={styles.alertCard}>
           <Card.Content style={styles.cardContent}>
             <View style={styles.cardInner}>
@@ -26,15 +40,19 @@ export default function HomeScreen() {
             </View>
           </Card.Content>
         </Card>
-        <View style={styles.twoColumns}>
+        <View style={styles.oneColumns}>
           <IconCard icon="tools" title="Start Inspection" />
-          <IconCard
+
+          {/* <IconCard
             icon="camera-outline"
             title="Scan Equipment"
             onPress={() => router.push('/equipment/0/scanning')}
-          />
+          /> */}
         </View>
-        <View style={styles.twoColumns}>
+        <View style={styles.oneColumns}>
+          <IconCard icon="clipboard-list-outline" title="My Work Orders" />
+        </View>
+        {/* <View style={styles.oneColumns}>
           <IconCard
             icon="alert-outline"
             title="Incident Reports"
@@ -49,7 +67,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/work-orders')}
           />
           <IconCard icon="map-search-outline" title="Location Map" />
-        </View>
+        </View> */}
       </ScrollView>
     </ThemedView>
   );
@@ -65,8 +83,13 @@ const styles = StyleSheet.create({
   },
   header: {},
 
-  alertCard: {
+  urgentCard: {
     backgroundColor: MD2Colors.deepOrange800,
+    color: MD3Colors.primary100,
+  },
+
+  alertCard: {
+    backgroundColor: MD2Colors.amber600,
     color: MD3Colors.primary100,
   },
 
@@ -93,6 +116,14 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   twoColumns: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexShrink: 1,
+    gap: 16,
+    flexGrow: 1,
+  },
+  oneColumns: {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
