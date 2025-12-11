@@ -93,7 +93,10 @@ export default function InitialInspectionScreen() {
     // TODO: Navigate to next inspection screen
     console.log('Checklist:', checklist);
     console.log('Notes:', notes);
-    // router.push(`/inspection/${id}/details`);
+    router.push({
+      pathname: '/inspection/[id]/taking-photos',
+      params: { id: id as string }
+    });
   };
 
   if (!alert) {
@@ -158,8 +161,8 @@ export default function InitialInspectionScreen() {
                     />
                   }
                 >
-                  <Menu.Item onPress={() => {}} title="Open Camera" leadingIcon="camera" />
-                  <Menu.Item onPress={() => {}} title="Choose from Gallery" leadingIcon="image" />
+                  <Menu.Item onPress={() => { }} title="Open Camera" leadingIcon="camera" />
+                  <Menu.Item onPress={() => { }} title="Choose from Gallery" leadingIcon="image" />
                 </Menu>
               </View>
             </Card.Content>
@@ -215,21 +218,16 @@ export default function InitialInspectionScreen() {
                 numberOfLines={5}
                 style={styles.notesInput}
               />
+
             </Card.Content>
           </Card>
-        </ScrollView>
-
-        {/* Fixed Bottom Button */}
-        <View style={styles.bottomButtonContainer}>
-          <Button
+          <Button style={styles.nextButton}
             mode="contained"
             onPress={handleNext}
-            style={styles.nextButton}
-            contentStyle={styles.nextButtonContent}
           >
             Next
           </Button>
-        </View>
+        </ScrollView>
       </ThemedView>
     </>
   );
@@ -330,18 +328,8 @@ const styles = StyleSheet.create({
   notesInput: {
     minHeight: 150,
   },
-  bottomButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    backgroundColor: 'transparent',
-  },
+
   nextButton: {
-    borderRadius: 24,
-  },
-  nextButtonContent: {
-    paddingVertical: 8,
+    marginVertical: 8,
   },
 });
