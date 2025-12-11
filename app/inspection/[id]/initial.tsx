@@ -95,7 +95,7 @@ export default function InitialInspectionScreen() {
     console.log('Notes:', notes);
     router.push({
       pathname: '/inspection/[id]/taking-photos',
-      params: { id: id as string }
+      params: { id: id as string },
     });
   };
 
@@ -161,8 +161,8 @@ export default function InitialInspectionScreen() {
                     />
                   }
                 >
-                  <Menu.Item onPress={() => { }} title="Open Camera" leadingIcon="camera" />
-                  <Menu.Item onPress={() => { }} title="Choose from Gallery" leadingIcon="image" />
+                  <Menu.Item onPress={() => {}} title="Open Camera" leadingIcon="camera" />
+                  <Menu.Item onPress={() => {}} title="Choose from Gallery" leadingIcon="image" />
                 </Menu>
               </View>
             </Card.Content>
@@ -218,13 +218,9 @@ export default function InitialInspectionScreen() {
                 numberOfLines={5}
                 style={styles.notesInput}
               />
-
             </Card.Content>
           </Card>
-          <Button style={styles.nextButton}
-            mode="contained"
-            onPress={handleNext}
-          >
+          <Button style={styles.nextButton} mode="contained" onPress={handleNext}>
             Next
           </Button>
         </ScrollView>

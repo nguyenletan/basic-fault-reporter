@@ -13,7 +13,16 @@ import * as ImagePicker from 'expo-image-picker';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Card, Icon, IconButton, MD2Colors, Text } from 'react-native-paper';
+import {
+  ActivityIndicator,
+  Button,
+  Card,
+  Icon,
+  IconButton,
+  MD2Colors,
+  MD3Colors,
+  Text,
+} from 'react-native-paper';
 
 interface CapturedPhoto {
   uri: string;
@@ -73,14 +82,23 @@ export default function TakingPhotosScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
-  const [photos, setPhotos] = useState<CapturedPhoto[]>([]);
+
+  // Step management
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  const [step1Photos, setStep1Photos] = useState<CapturedPhoto[]>([]);
+  const [step2Photos, setStep2Photos] = useState<CapturedPhoto[]>([]);
+
   const [selectedAI, setSelectedAI] = useState<AIProvider>('openai');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(true);
 
-  const MAX_PHOTOS = 3;
+  const MAX_PHOTOS = 5;
   const MIN_PHOTOS = 1;
+
+  // Get current step's photos
+  const photos = currentStep === 1 ? step1Photos : step2Photos;
+  const setPhotos = currentStep === 1 ? setStep1Photos : setStep2Photos;
 
   // Handle camera permissions
   if (!permission) {
@@ -205,10 +223,18 @@ export default function TakingPhotosScreen() {
   };
 
   const analyzeWithAI = async () => {
-    if (photos.length < MIN_PHOTOS) {
+    // Check if both steps have minimum photos
+    if (step1Photos.length < MIN_PHOTOS) {
       Alert.alert(
         'Insufficient Photos',
-        `Please capture at least ${MIN_PHOTOS} photo(s) for analysis.`
+        `Please capture at least ${MIN_PHOTOS} photo(s) for Step 1: Full Equipment Overview.`
+      );
+      return;
+    }
+    if (step2Photos.length < MIN_PHOTOS) {
+      Alert.alert(
+        'Insufficient Photos',
+        `Please capture at least ${MIN_PHOTOS} photo(s) for Step 2: Close-Up of Key Components.`
       );
       return;
     }
@@ -217,8 +243,10 @@ export default function TakingPhotosScreen() {
     setAnalysisResult(null);
 
     try {
+      // Combine photos from both steps
+      const allPhotos = [...step1Photos, ...step2Photos];
       const response = await analyzeFaults({
-        imageUris: photos.map((p) => p.uri),
+        imageUris: allPhotos.map((p) => p.uri),
         provider: selectedAI,
         equipmentId: String(id),
       });
@@ -240,8 +268,27 @@ export default function TakingPhotosScreen() {
   };
 
   const resetScanning = () => {
-    setPhotos([]);
+    setStep1Photos([]);
+    setStep2Photos([]);
+    setCurrentStep(1);
     setAnalysisResult(null);
+    setShowCamera(true);
+  };
+
+  const handleNextStep = () => {
+    if (currentStep === 1 && photos.length < MIN_PHOTOS) {
+      Alert.alert(
+        'Photos Required',
+        `Please capture at least ${MIN_PHOTOS} photo(s) for the equipment overview.`
+      );
+      return;
+    }
+    setCurrentStep(2);
+    setShowCamera(true);
+  };
+
+  const handlePreviousStep = () => {
+    setCurrentStep(1);
     setShowCamera(true);
   };
 
@@ -252,6 +299,16 @@ export default function TakingPhotosScreen() {
         onPress: () => router.back(),
       },
     ]);
+  };
+
+  const getStepTitle = () => {
+    return currentStep === 1 ? 'Full Equipment Overview' : 'Close-Up of Key Components';
+  };
+
+  const getStepDescription = () => {
+    return currentStep === 1
+      ? 'Capture overall view of the equipment (1-5 photos)'
+      : 'Capture detailed close-ups of important components (1-5 photos)';
   };
 
   return (
@@ -272,9 +329,7 @@ export default function TakingPhotosScreen() {
                   <IconButton icon="home" size={32} />
                 </View>
                 <View style={styles.headerTextContainer}>
-                  <Text variant="titleMedium">
-                    Initial Basic Surface Inspection:
-                  </Text>
+                  <Text variant="titleMedium">Initial Basic Surface Inspection:</Text>
                   <Text variant="bodyLarge" style={styles.headerSubtitle}>
                     {alert.equipmentId} {alert.title}
                   </Text>
@@ -282,6 +337,79 @@ export default function TakingPhotosScreen() {
               </Card.Content>
             </Card>
           )}
+
+          {/* Step Indicator */}
+          <Card mode="outlined" style={styles.stepCard}>
+            <Card.Content>
+              <View style={styles.stepIndicator}>
+                <View style={styles.stepItem}>
+                  <View
+                    style={[
+                      styles.stepCircle,
+                      currentStep === 1 && styles.stepCircleActive,
+                      step1Photos.length >= MIN_PHOTOS && styles.stepCircleCompleted,
+                    ]}
+                  >
+                    <Text
+                      variant="bodyMedium"
+                      style={[
+                        styles.stepNumber,
+                        (currentStep === 1 || step1Photos.length >= MIN_PHOTOS) &&
+                          (step1Photos.length >= MIN_PHOTOS
+                            ? styles.stepNumberActiveCompleted
+                            : styles.stepNumberActive),
+                      ]}
+                    >
+                      {step1Photos.length >= MIN_PHOTOS ? '✓' : '1'}
+                    </Text>
+                  </View>
+                  <Text
+                    variant="bodySmall"
+                    style={[styles.stepLabel, currentStep === 1 && styles.stepLabelActive]}
+                  >
+                    Overview
+                  </Text>
+                </View>
+                <View style={styles.stepConnector} />
+                <View style={styles.stepItem}>
+                  <View
+                    style={[
+                      styles.stepCircle,
+                      currentStep === 2 && styles.stepCircleActive,
+                      step2Photos.length >= MIN_PHOTOS && styles.stepCircleCompleted,
+                    ]}
+                  >
+                    <Text
+                      variant="bodyMedium"
+                      style={[
+                        styles.stepNumber,
+                        (currentStep === 2 || step2Photos.length >= MIN_PHOTOS) &&
+                          (step2Photos.length >= MIN_PHOTOS
+                            ? styles.stepNumberActiveCompleted
+                            : styles.stepNumberActive),
+                      ]}
+                    >
+                      {step2Photos.length >= MIN_PHOTOS ? '✓' : '2'}
+                    </Text>
+                  </View>
+                  <Text
+                    variant="bodySmall"
+                    style={[styles.stepLabel, currentStep === 2 && styles.stepLabelActive]}
+                  >
+                    Close-Up
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.stepDescription}>
+                <Text variant="titleSmall" style={styles.stepTitle}>
+                  {getStepTitle()}
+                </Text>
+                <Text variant="bodySmall" style={styles.stepSubtitle}>
+                  {getStepDescription()}
+                </Text>
+              </View>
+            </Card.Content>
+          </Card>
 
           {/* Upload Options - Always visible when not at max */}
           {photos.length < MAX_PHOTOS && (
@@ -314,25 +442,72 @@ export default function TakingPhotosScreen() {
             />
           )}
 
-          {/* AI Provider Selection */}
-          {photos.length >= MIN_PHOTOS && !analysisResult && (
-            <AIProviderSelectorCard selectedAI={selectedAI} onSelectAI={setSelectedAI} />
-          )}
+          {/* AI Provider Selection - Only show in step 2 after taking photos */}
+          {currentStep === 2 &&
+            step2Photos.length >= MIN_PHOTOS &&
+            step1Photos.length >= MIN_PHOTOS &&
+            !analysisResult && (
+              <AIProviderSelectorCard selectedAI={selectedAI} onSelectAI={setSelectedAI} />
+            )}
 
           {/* Analysis Results */}
           {analysisResult && <AnalysisResultsCard analysisResult={analysisResult} />}
 
-          {/* Action Buttons */}
-          <ActionButtons
-            photosCount={photos.length}
-            minPhotos={MIN_PHOTOS}
-            isAnalyzing={isAnalyzing}
-            hasAnalysisResult={!!analysisResult}
-            onAnalyze={analyzeWithAI}
-            onReset={resetScanning}
-            onSave={handleSaveAnalysis}
-            onCancel={() => router.back()}
-          />
+          {/* Step Navigation and Action Buttons */}
+          {!analysisResult && (
+            <View style={styles.navigationButtons}>
+              {/* Step 1: Show Next button */}
+              {currentStep === 1 && (
+                <>
+                  <Button mode="outlined" onPress={() => router.back()} style={styles.navButton}>
+                    Cancel
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={handleNextStep}
+                    style={styles.navButton}
+                    disabled={photos.length < MIN_PHOTOS}
+                  >
+                    Next Step
+                  </Button>
+                </>
+              )}
+
+              {/* Step 2: Show Back, Analyze, Cancel */}
+              {currentStep === 2 && (
+                <>
+                  <Button mode="outlined" onPress={handlePreviousStep} style={styles.navButton}>
+                    Back
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={analyzeWithAI}
+                    style={styles.navButton}
+                    disabled={
+                      step1Photos.length < MIN_PHOTOS ||
+                      step2Photos.length < MIN_PHOTOS ||
+                      isAnalyzing
+                    }
+                    loading={isAnalyzing}
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+                  </Button>
+                </>
+              )}
+            </View>
+          )}
+
+          {/* Post-Analysis Action Buttons */}
+          {analysisResult && (
+            <View style={styles.navigationButtons}>
+              <Button mode="outlined" onPress={resetScanning} style={styles.navButton}>
+                Start Over
+              </Button>
+              <Button mode="contained" onPress={handleSaveAnalysis} style={styles.navButton}>
+                Save Analysis
+              </Button>
+            </View>
+          )}
         </ScrollView>
       </ThemedView>
     </>
@@ -381,5 +556,80 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontWeight: '600',
+  },
+  stepCard: {
+    borderWidth: 2,
+  },
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  stepItem: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  stepCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepCircleActive: {
+    borderColor: MD3Colors.primary40,
+    //backgroundColor: '#5EBAB0',
+  },
+  stepCircleCompleted: {
+    borderColor: MD3Colors.primary40,
+    backgroundColor: MD3Colors.primary40,
+  },
+  stepNumber: {
+    color: MD3Colors.secondary60,
+    fontWeight: '600',
+  },
+  stepNumberActive: {
+    color: MD3Colors.primary30,
+  },
+  stepNumberActiveCompleted: {
+    color: MD3Colors.secondary100,
+  },
+  stepConnector: {
+    width: 60,
+    height: 2,
+    backgroundColor: '#ccc',
+    marginHorizontal: 8,
+  },
+  stepLabel: {
+    color: MD3Colors.secondary50,
+    fontWeight: '500',
+  },
+  stepLabelActive: {
+    color: MD3Colors.primary20,
+    fontWeight: '600',
+  },
+  stepDescription: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  stepTitle: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  stepSubtitle: {
+    opacity: 0.7,
+    textAlign: 'center',
+  },
+  navigationButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  navButton: {
+    flex: 1,
   },
 });
