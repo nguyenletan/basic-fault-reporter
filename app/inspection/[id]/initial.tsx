@@ -93,9 +93,16 @@ export default function InitialInspectionScreen() {
     // TODO: Navigate to next inspection screen
     console.log('Checklist:', checklist);
     console.log('Notes:', notes);
+
+    // Check if "Abnormal noise" is selected
+    const abnormalNoiseChecked = checklist.find((item) => item.id === '2')?.checked || false;
+
     router.push({
       pathname: '/inspection/[id]/taking-photos',
-      params: { id: id as string },
+      params: {
+        id: id as string,
+        hasAbnormalNoise: abnormalNoiseChecked.toString(),
+      },
     });
   };
 

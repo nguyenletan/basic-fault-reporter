@@ -1,33 +1,23 @@
-import { ActionButtons } from '@/components/scanning/action-buttons';
 import { AIProviderSelectorCard } from '@/components/scanning/ai-provider-selector-card';
 import { AnalysisResultsCard } from '@/components/scanning/analysis-results-card';
 import { CameraCard } from '@/components/scanning/camera-card';
 import { PhotosGridCard } from '@/components/scanning/photos-grid-card';
 import { UploadOptionsCard } from '@/components/scanning/upload-options-card';
 import { ThemedView } from '@/components/themed-view';
-import { Alert as AlertType } from '@/types/types';
+import { NavigationButtons } from '@/components/inspection/navigation-buttons';
+import { StepIndicator } from '@/components/inspection/step-indicator';
+import { VideoRecordingSection } from '@/components/inspection/video-recording-section';
 import { useEquipmentLocation } from '@/hooks/use-equipment-location';
+import { useInspectionSteps } from '@/hooks/use-inspection-steps';
+import { usePhotoCapture } from '@/hooks/use-photo-capture';
+import { useVideoRecording } from '@/hooks/use-video-recording';
 import { AIProvider, analyzeFaults } from '@/services/ai-fault-detection';
+import { Alert as AlertType } from '@/types/types';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import {
-  ActivityIndicator,
-  Button,
-  Card,
-  Icon,
-  IconButton,
-  MD2Colors,
-  MD3Colors,
-  Text,
-} from 'react-native-paper';
-
-interface CapturedPhoto {
-  uri: string;
-  id: string;
-}
+import { ActivityIndicator, Button, Card, Icon, IconButton, MD2Colors, Text } from 'react-native-paper';
 
 // Mock data - should match the alerts from initial.tsx
 const alerts: AlertType[] = [
@@ -76,40 +66,47 @@ const alerts: AlertType[] = [
 ];
 
 export default function TakingPhotosScreen() {
-  const { id } = useLocalSearchParams();
+  const { id, hasAbnormalNoise } = useLocalSearchParams();
   const alert = alerts.find((a) => a.id === Number(id));
   const { location } = useEquipmentLocation(String(id));
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
 
-  // Step management
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
-  const [step1Photos, setStep1Photos] = useState<CapturedPhoto[]>([]);
-  const [step2Photos, setStep2Photos] = useState<CapturedPhoto[]>([]);
+  const MAX_PHOTOS = 5;
+  const MIN_PHOTOS = 1;
+  const MAX_VIDEO_DURATION = 30;
+
+  const hasAbnormalNoiseChecked = hasAbnormalNoise === 'true';
+
+  // Use custom hooks
+  const stepManager = useInspectionSteps({
+    hasAbnormalNoise: hasAbnormalNoiseChecked,
+    minPhotos: MIN_PHOTOS,
+  });
+
+  const photoCapture = usePhotoCapture({
+    cameraRef,
+    maxPhotos: MAX_PHOTOS,
+    photos: stepManager.photos,
+    setPhotos: stepManager.setPhotos,
+  });
+
+  const videoRecording = useVideoRecording({
+    cameraRef,
+    maxDuration: MAX_VIDEO_DURATION,
+    onVideoRecorded: stepManager.setStep3VideoUri,
+  });
 
   const [selectedAI, setSelectedAI] = useState<AIProvider>('openai');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-  const [showCamera, setShowCamera] = useState(true);
-
-  const MAX_PHOTOS = 5;
-  const MIN_PHOTOS = 1;
-
-  // Get current step's photos
-  const photos = currentStep === 1 ? step1Photos : step2Photos;
-  const setPhotos = currentStep === 1 ? setStep1Photos : setStep2Photos;
 
   // Handle camera permissions
   if (!permission) {
     return (
       <>
-        <Stack.Screen
-          options={{
-            title: 'Equipment Scanning',
-            headerShown: true,
-          }}
-        />
+        <Stack.Screen options={{ title: 'Equipment Scanning', headerShown: true }} />
         <ThemedView style={styles.container}>
           <View style={styles.centerContent}>
             <ActivityIndicator size="large" />
@@ -123,12 +120,7 @@ export default function TakingPhotosScreen() {
   if (!permission.granted) {
     return (
       <>
-        <Stack.Screen
-          options={{
-            title: 'Camera Permission',
-            headerShown: true,
-          }}
-        />
+        <Stack.Screen options={{ title: 'Camera Permission', headerShown: true }} />
         <ThemedView style={styles.container}>
           <View style={styles.centerContent}>
             <Icon source="camera-off" size={64} color={MD2Colors.orange500} />
@@ -147,95 +139,27 @@ export default function TakingPhotosScreen() {
     );
   }
 
-  const takePhoto = async () => {
-    if (!cameraRef.current) return;
-
-    if (photos.length >= MAX_PHOTOS) {
-      Alert.alert('Maximum Photos Reached', `You can only capture up to ${MAX_PHOTOS} photos.`);
-      return;
-    }
-
-    try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
-      });
-
-      if (photo) {
-        const newPhoto: CapturedPhoto = {
-          uri: photo.uri,
-          id: Date.now().toString(),
-        };
-        setPhotos([...photos, newPhoto]);
-
-        if (photos.length + 1 >= MAX_PHOTOS) {
-          setShowCamera(false);
-        }
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to capture photo. Please try again.');
-    }
-  };
-
-  const pickImage = async () => {
-    if (photos.length >= MAX_PHOTOS) {
-      Alert.alert('Maximum Photos Reached', `You can only select up to ${MAX_PHOTOS} photos.`);
-      return;
-    }
-
-    try {
-      const remainingSlots = MAX_PHOTOS - photos.length;
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
-        allowsMultipleSelection: true,
-        quality: 0.8,
-        selectionLimit: remainingSlots,
-      });
-
-      if (!result.canceled && result.assets.length > 0) {
-        const newPhotos: CapturedPhoto[] = result.assets.map((asset, index) => ({
-          uri: asset.uri,
-          id: `${Date.now()}-${index}`,
-        }));
-
-        const updatedPhotos = [...photos, ...newPhotos].slice(0, MAX_PHOTOS);
-        setPhotos(updatedPhotos);
-
-        if (updatedPhotos.length >= MAX_PHOTOS) {
-          setShowCamera(false);
-        }
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to select image. Please try again.');
-    }
-  };
-
-  const removePhoto = (photoId: string) => {
-    setPhotos(photos.filter((p) => p.id !== photoId));
-    if (photos.length - 1 < MAX_PHOTOS) {
-      setShowCamera(true);
-    }
-  };
-
   const toggleCamera = () => {
     setFacing((current) => (current === 'back' ? 'front' : 'back'));
   };
 
   const analyzeWithAI = async () => {
-    // Check if both steps have minimum photos
-    if (step1Photos.length < MIN_PHOTOS) {
+    if (stepManager.step1Photos.length < MIN_PHOTOS) {
       Alert.alert(
         'Insufficient Photos',
         `Please capture at least ${MIN_PHOTOS} photo(s) for Step 1: Full Equipment Overview.`
       );
       return;
     }
-    if (step2Photos.length < MIN_PHOTOS) {
+    if (stepManager.step2Photos.length < MIN_PHOTOS) {
       Alert.alert(
         'Insufficient Photos',
         `Please capture at least ${MIN_PHOTOS} photo(s) for Step 2: Close-Up of Key Components.`
       );
+      return;
+    }
+    if (hasAbnormalNoiseChecked && !stepManager.step3VideoUri) {
+      Alert.alert('Video Required', 'Please record a short video of the abnormal sound before analyzing.');
       return;
     }
 
@@ -243,21 +167,18 @@ export default function TakingPhotosScreen() {
     setAnalysisResult(null);
 
     try {
-      // Combine photos from both steps
-      const allPhotos = [...step1Photos, ...step2Photos];
+      const allPhotos = [...stepManager.step1Photos, ...stepManager.step2Photos];
       const response = await analyzeFaults({
         imageUris: allPhotos.map((p) => p.uri),
         provider: selectedAI,
         equipmentId: String(id),
+        videoUri: stepManager.step3VideoUri || undefined,
       });
 
       if (response.success && response.data) {
         setAnalysisResult(response.data.analysis);
       } else {
-        Alert.alert(
-          'Analysis Failed',
-          response.error || 'Failed to analyze photos. Please try again.'
-        );
+        Alert.alert('Analysis Failed', response.error || 'Failed to analyze photos. Please try again.');
       }
     } catch (error) {
       console.error('Error analyzing photos:', error);
@@ -268,28 +189,9 @@ export default function TakingPhotosScreen() {
   };
 
   const resetScanning = () => {
-    setStep1Photos([]);
-    setStep2Photos([]);
-    setCurrentStep(1);
+    stepManager.resetSteps();
     setAnalysisResult(null);
-    setShowCamera(true);
-  };
-
-  const handleNextStep = () => {
-    if (currentStep === 1 && photos.length < MIN_PHOTOS) {
-      Alert.alert(
-        'Photos Required',
-        `Please capture at least ${MIN_PHOTOS} photo(s) for the equipment overview.`
-      );
-      return;
-    }
-    setCurrentStep(2);
-    setShowCamera(true);
-  };
-
-  const handlePreviousStep = () => {
-    setCurrentStep(1);
-    setShowCamera(true);
+    photoCapture.setShowCamera(true);
   };
 
   const handleSaveAnalysis = () => {
@@ -301,24 +203,28 @@ export default function TakingPhotosScreen() {
     ]);
   };
 
-  const getStepTitle = () => {
-    return currentStep === 1 ? 'Full Equipment Overview' : 'Close-Up of Key Components';
+  const handleNextStep = () => {
+    if (stepManager.handleNextStep()) {
+      photoCapture.setShowCamera(true);
+    }
   };
 
-  const getStepDescription = () => {
-    return currentStep === 1
-      ? 'Capture overall view of the equipment (1-5 photos)'
-      : 'Capture detailed close-ups of important components (1-5 photos)';
-  };
+  // Determine if we can proceed to next step or analyze
+  const canProceed =
+    stepManager.currentStep === 1
+      ? stepManager.photos.length >= MIN_PHOTOS
+      : stepManager.currentStep === 2
+        ? stepManager.photos.length >= MIN_PHOTOS
+        : stepManager.step3VideoUri !== null;
+
+  const canAnalyze =
+    stepManager.step1Photos.length >= MIN_PHOTOS &&
+    stepManager.step2Photos.length >= MIN_PHOTOS &&
+    (!hasAbnormalNoiseChecked || stepManager.step3VideoUri !== null);
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: 'Equipment Scanning',
-          headerShown: true,
-        }}
-      />
+      <Stack.Screen options={{ title: 'Equipment Scanning', headerShown: true }} />
       <ThemedView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Header Card with Equipment Info */}
@@ -339,113 +245,72 @@ export default function TakingPhotosScreen() {
           )}
 
           {/* Step Indicator */}
-          <Card mode="outlined" style={styles.stepCard}>
-            <Card.Content>
-              <View style={styles.stepIndicator}>
-                <View style={styles.stepItem}>
-                  <View
-                    style={[
-                      styles.stepCircle,
-                      currentStep === 1 && styles.stepCircleActive,
-                      step1Photos.length >= MIN_PHOTOS && styles.stepCircleCompleted,
-                    ]}
-                  >
-                    <Text
-                      variant="bodyMedium"
-                      style={[
-                        styles.stepNumber,
-                        (currentStep === 1 || step1Photos.length >= MIN_PHOTOS) &&
-                          (step1Photos.length >= MIN_PHOTOS
-                            ? styles.stepNumberActiveCompleted
-                            : styles.stepNumberActive),
-                      ]}
-                    >
-                      {step1Photos.length >= MIN_PHOTOS ? '✓' : '1'}
-                    </Text>
-                  </View>
-                  <Text
-                    variant="bodySmall"
-                    style={[styles.stepLabel, currentStep === 1 && styles.stepLabelActive]}
-                  >
-                    Overview
-                  </Text>
-                </View>
-                <View style={styles.stepConnector} />
-                <View style={styles.stepItem}>
-                  <View
-                    style={[
-                      styles.stepCircle,
-                      currentStep === 2 && styles.stepCircleActive,
-                      step2Photos.length >= MIN_PHOTOS && styles.stepCircleCompleted,
-                    ]}
-                  >
-                    <Text
-                      variant="bodyMedium"
-                      style={[
-                        styles.stepNumber,
-                        (currentStep === 2 || step2Photos.length >= MIN_PHOTOS) &&
-                          (step2Photos.length >= MIN_PHOTOS
-                            ? styles.stepNumberActiveCompleted
-                            : styles.stepNumberActive),
-                      ]}
-                    >
-                      {step2Photos.length >= MIN_PHOTOS ? '✓' : '2'}
-                    </Text>
-                  </View>
-                  <Text
-                    variant="bodySmall"
-                    style={[styles.stepLabel, currentStep === 2 && styles.stepLabelActive]}
-                  >
-                    Close-Up
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.stepDescription}>
-                <Text variant="titleSmall" style={styles.stepTitle}>
-                  {getStepTitle()}
-                </Text>
-                <Text variant="bodySmall" style={styles.stepSubtitle}>
-                  {getStepDescription()}
-                </Text>
-              </View>
-            </Card.Content>
-          </Card>
+          <StepIndicator
+            currentStep={stepManager.currentStep}
+            hasAbnormalNoise={hasAbnormalNoiseChecked}
+            step1Completed={stepManager.step1Photos.length >= MIN_PHOTOS}
+            step2Completed={stepManager.step2Photos.length >= MIN_PHOTOS}
+            step3Completed={stepManager.step3VideoUri !== null}
+            stepTitle={stepManager.getStepTitle()}
+            stepDescription={stepManager.getStepDescription(MAX_VIDEO_DURATION)}
+          />
 
-          {/* Upload Options - Always visible when not at max */}
-          {photos.length < MAX_PHOTOS && (
-            <UploadOptionsCard
-              photosCount={photos.length}
-              maxPhotos={MAX_PHOTOS}
-              showCamera={showCamera}
-              onPickImage={pickImage}
-              onToggleCamera={() => setShowCamera(!showCamera)}
-            />
+          {/* Photo Capture UI (Steps 1 & 2) */}
+          {stepManager.currentStep !== 3 && (
+            <>
+              {/* Upload Options */}
+              {stepManager.photos.length < MAX_PHOTOS && (
+                <UploadOptionsCard
+                  photosCount={stepManager.photos.length}
+                  maxPhotos={MAX_PHOTOS}
+                  showCamera={photoCapture.showCamera}
+                  onPickImage={photoCapture.pickImage}
+                  onToggleCamera={() => photoCapture.setShowCamera(!photoCapture.showCamera)}
+                />
+              )}
+
+              {/* Camera View */}
+              {photoCapture.showCamera && stepManager.photos.length < MAX_PHOTOS && (
+                <CameraCard
+                  cameraRef={cameraRef}
+                  facing={facing}
+                  onTakePhoto={photoCapture.takePhoto}
+                  onToggleCamera={toggleCamera}
+                />
+              )}
+
+              {/* Captured Photos */}
+              {stepManager.photos.length > 0 && (
+                <PhotosGridCard
+                  photos={stepManager.photos}
+                  maxPhotos={MAX_PHOTOS}
+                  onRemovePhoto={photoCapture.removePhoto}
+                  onPickImage={photoCapture.pickImage}
+                />
+              )}
+            </>
           )}
 
-          {/* Camera View */}
-          {showCamera && photos.length < MAX_PHOTOS && (
-            <CameraCard
+          {/* Video Recording UI (Step 3) */}
+          {stepManager.currentStep === 3 && (
+            <VideoRecordingSection
               cameraRef={cameraRef}
               facing={facing}
-              onTakePhoto={takePhoto}
+              isRecording={videoRecording.isRecording}
+              videoUri={stepManager.step3VideoUri}
+              maxDuration={MAX_VIDEO_DURATION}
+              onStartRecording={videoRecording.startRecording}
+              onStopRecording={videoRecording.stopRecording}
               onToggleCamera={toggleCamera}
+              onRemoveVideo={() => stepManager.setStep3VideoUri(null)}
             />
           )}
 
-          {/* Captured Photos */}
-          {photos.length > 0 && (
-            <PhotosGridCard
-              photos={photos}
-              maxPhotos={MAX_PHOTOS}
-              onRemovePhoto={removePhoto}
-              onPickImage={pickImage}
-            />
-          )}
-
-          {/* AI Provider Selection - Only show in step 2 after taking photos */}
-          {currentStep === 2 &&
-            step2Photos.length >= MIN_PHOTOS &&
-            step1Photos.length >= MIN_PHOTOS &&
+          {/* AI Provider Selection */}
+          {((stepManager.currentStep === 2 && !hasAbnormalNoiseChecked) ||
+            (stepManager.currentStep === 3 && hasAbnormalNoiseChecked && stepManager.step3VideoUri)) &&
+            stepManager.step2Photos.length >= MIN_PHOTOS &&
+            stepManager.step1Photos.length >= MIN_PHOTOS &&
             !analysisResult && (
               <AIProviderSelectorCard selectedAI={selectedAI} onSelectAI={setSelectedAI} />
             )}
@@ -453,61 +318,20 @@ export default function TakingPhotosScreen() {
           {/* Analysis Results */}
           {analysisResult && <AnalysisResultsCard analysisResult={analysisResult} />}
 
-          {/* Step Navigation and Action Buttons */}
-          {!analysisResult && (
-            <View style={styles.navigationButtons}>
-              {/* Step 1: Show Next button */}
-              {currentStep === 1 && (
-                <>
-                  <Button mode="outlined" onPress={() => router.back()} style={styles.navButton}>
-                    Cancel
-                  </Button>
-                  <Button
-                    mode="contained"
-                    onPress={handleNextStep}
-                    style={styles.navButton}
-                    disabled={photos.length < MIN_PHOTOS}
-                  >
-                    Next Step
-                  </Button>
-                </>
-              )}
-
-              {/* Step 2: Show Back, Analyze, Cancel */}
-              {currentStep === 2 && (
-                <>
-                  <Button mode="outlined" onPress={handlePreviousStep} style={styles.navButton}>
-                    Back
-                  </Button>
-                  <Button
-                    mode="contained"
-                    onPress={analyzeWithAI}
-                    style={styles.navButton}
-                    disabled={
-                      step1Photos.length < MIN_PHOTOS ||
-                      step2Photos.length < MIN_PHOTOS ||
-                      isAnalyzing
-                    }
-                    loading={isAnalyzing}
-                  >
-                    {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
-                  </Button>
-                </>
-              )}
-            </View>
-          )}
-
-          {/* Post-Analysis Action Buttons */}
-          {analysisResult && (
-            <View style={styles.navigationButtons}>
-              <Button mode="outlined" onPress={resetScanning} style={styles.navButton}>
-                Start Over
-              </Button>
-              <Button mode="contained" onPress={handleSaveAnalysis} style={styles.navButton}>
-                Save Analysis
-              </Button>
-            </View>
-          )}
+          {/* Navigation Buttons */}
+          <NavigationButtons
+            currentStep={stepManager.currentStep}
+            hasAbnormalNoise={hasAbnormalNoiseChecked}
+            canProceed={stepManager.currentStep === 3 ? canAnalyze : canProceed}
+            isAnalyzing={isAnalyzing}
+            showAnalysisResults={!!analysisResult}
+            onCancel={() => router.back()}
+            onBack={stepManager.handlePreviousStep}
+            onNext={handleNextStep}
+            onAnalyze={analyzeWithAI}
+            onStartOver={resetScanning}
+            onSave={handleSaveAnalysis}
+          />
         </ScrollView>
       </ThemedView>
     </>
@@ -556,80 +380,5 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontWeight: '600',
-  },
-  stepCard: {
-    borderWidth: 2,
-  },
-  stepIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  stepItem: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#ccc',
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepCircleActive: {
-    borderColor: MD3Colors.primary40,
-    //backgroundColor: '#5EBAB0',
-  },
-  stepCircleCompleted: {
-    borderColor: MD3Colors.primary40,
-    backgroundColor: MD3Colors.primary40,
-  },
-  stepNumber: {
-    color: MD3Colors.secondary60,
-    fontWeight: '600',
-  },
-  stepNumberActive: {
-    color: MD3Colors.primary30,
-  },
-  stepNumberActiveCompleted: {
-    color: MD3Colors.secondary100,
-  },
-  stepConnector: {
-    width: 60,
-    height: 2,
-    backgroundColor: '#ccc',
-    marginHorizontal: 8,
-  },
-  stepLabel: {
-    color: MD3Colors.secondary50,
-    fontWeight: '500',
-  },
-  stepLabelActive: {
-    color: MD3Colors.primary20,
-    fontWeight: '600',
-  },
-  stepDescription: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  stepTitle: {
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  stepSubtitle: {
-    opacity: 0.7,
-    textAlign: 'center',
-  },
-  navigationButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  navButton: {
-    flex: 1,
   },
 });

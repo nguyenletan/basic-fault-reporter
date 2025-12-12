@@ -12,6 +12,7 @@ export interface FaultAnalysisRequest {
   provider: AIProvider;
   equipmentId: string;
   equipmentType?: string;
+  videoUri?: string;
 }
 
 export interface FaultAnalysisResponse {
@@ -35,7 +36,7 @@ export const analyzeFaults = async (
   request: FaultAnalysisRequest
 ): Promise<FaultAnalysisResponse> => {
   try {
-    const { imageUris, provider, equipmentId } = request;
+    const { imageUris, provider, equipmentId, videoUri } = request;
 
     // Validate inputs
     if (!imageUris || imageUris.length === 0) {
@@ -45,21 +46,21 @@ export const analyzeFaults = async (
       };
     }
 
-    if (imageUris.length > 3) {
+    if (imageUris.length > 10) {
       return {
         success: false,
-        error: 'Maximum 3 images allowed per analysis',
+        error: 'Maximum 10 images allowed per analysis',
       };
     }
 
     // Call the appropriate AI service based on provider
     switch (provider) {
       case 'openai':
-        return await analyzeWithOpenAI(imageUris, equipmentId);
+        return await analyzeWithOpenAI(imageUris, equipmentId, videoUri);
       case 'gemini':
-        return await analyzeWithGemini(imageUris, equipmentId);
+        return await analyzeWithGemini(imageUris, equipmentId, videoUri);
       case 'grok':
-        return await analyzeWithGrok(imageUris, equipmentId);
+        return await analyzeWithGrok(imageUris, equipmentId, videoUri);
       default:
         return {
           success: false,
@@ -80,7 +81,8 @@ export const analyzeFaults = async (
  */
 const analyzeWithOpenAI = async (
   imageUris: string[],
-  equipmentId: string
+  equipmentId: string,
+  videoUri?: string
 ): Promise<FaultAnalysisResponse> => {
   try {
     const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
@@ -99,6 +101,10 @@ const analyzeWithOpenAI = async (
         return `data:image/jpeg;base64,${base64}`;
       })
     );
+
+    const videoNote = videoUri
+      ? '\n\nNOTE: A video recording of abnormal sound has been captured and is available for reference. Please consider potential sound-related issues (vibration, loose components, bearing wear, etc.) in your analysis.'
+      : '';
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -123,7 +129,7 @@ Please provide:
 4. Maintenance recommendations
 5. Severity assessment (low/medium/high/critical)
 
-Format your response clearly with sections for detected issues and recommendations.`,
+Format your response clearly with sections for detected issues and recommendations.${videoNote}`,
               },
               ...base64Images.map((imageData) => ({
                 type: 'image_url',
@@ -180,7 +186,8 @@ Format your response clearly with sections for detected issues and recommendatio
  */
 const analyzeWithGemini = async (
   imageUris: string[],
-  equipmentId: string
+  equipmentId: string,
+  videoUri?: string
 ): Promise<FaultAnalysisResponse> => {
   try {
     const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
@@ -194,6 +201,10 @@ const analyzeWithGemini = async (
 
     // Convert local image URIs to base64 (without data URI prefix for Gemini)
     const base64Images = await Promise.all(imageUris.map((uri) => convertImageToBase64(uri)));
+
+    const videoNote = videoUri
+      ? '\n\nNOTE: A video recording of abnormal sound has been captured and is available for reference. Please consider potential sound-related issues (vibration, loose components, bearing wear, etc.) in your analysis.'
+      : '';
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -216,7 +227,7 @@ Please provide:
 4. Maintenance recommendations
 5. Severity assessment (low/medium/high/critical)
 
-Format your response clearly with sections for detected issues and recommendations.`,
+Format your response clearly with sections for detected issues and recommendations.${videoNote}`,
                 },
                 ...base64Images.map((base64Data) => ({
                   inline_data: {
@@ -278,7 +289,8 @@ Format your response clearly with sections for detected issues and recommendatio
  */
 const analyzeWithGrok = async (
   imageUris: string[],
-  equipmentId: string
+  equipmentId: string,
+  videoUri?: string
 ): Promise<FaultAnalysisResponse> => {
   try {
     const apiKey = process.env.EXPO_PUBLIC_GROK_API_KEY;
@@ -297,6 +309,10 @@ const analyzeWithGrok = async (
         return `data:image/jpeg;base64,${base64}`;
       })
     );
+
+    const videoNote = videoUri
+      ? '\n\nNOTE: A video recording of abnormal sound has been captured and is available for reference. Please consider potential sound-related issues (vibration, loose components, bearing wear, etc.) in your analysis.'
+      : '';
 
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -321,7 +337,7 @@ Please provide:
 4. Maintenance recommendations
 5. Severity assessment (low/medium/high/critical)
 
-Format your response clearly with sections for detected issues and recommendations.`,
+Format your response clearly with sections for detected issues and recommendations.${videoNote}`,
               },
               ...base64Images.map((imageData) => ({
                 type: 'image_url',
