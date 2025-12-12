@@ -5,7 +5,6 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 're
 import {
   Button,
   Card,
-  Checkbox,
   MD3Colors,
   Snackbar,
   Surface,
@@ -14,11 +13,13 @@ import {
   useTheme,
 } from 'react-native-paper';
 
-export default function LoginScreen() {
+export default function SignUpScreen() {
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [keepSignedIn, setKeepSignedIn] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -32,36 +33,61 @@ export default function LoginScreen() {
     setSnackbarVisible(true);
   };
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      showMessage('Please enter both email and password', 'error');
+  const validateForm = () => {
+    if (!fullName.trim()) {
+      showMessage('Please enter your full name', 'error');
+      return false;
+    }
+
+    if (!email.trim()) {
+      showMessage('Please enter your email', 'error');
+      return false;
+    }
+
+    if (!password) {
+      showMessage('Please enter a password', 'error');
+      return false;
+    }
+
+    if (password.length < 6) {
+      showMessage('Password must be at least 6 characters', 'error');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      showMessage('Passwords do not match', 'error');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
     try {
       const fullEmail = email.includes('@') ? email : `${email}@gmail.com`;
-      await authService.signIn(fullEmail, password);
-      showMessage('Logged in successfully!', 'success');
+      await authService.signUp(fullEmail, password);
+      showMessage('Account created successfully!', 'success');
       setTimeout(() => router.replace('/(tabs)'), 500);
     } catch (error: any) {
-      let errorMessage = 'Failed to sign in';
+      let errorMessage = 'Failed to create account';
 
       switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'An account with this email already exists';
+          break;
         case 'auth/invalid-email':
           errorMessage = 'Invalid email address';
           break;
-        case 'auth/user-disabled':
-          errorMessage = 'This account has been disabled';
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Sign up is not enabled';
           break;
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email';
-          break;
-        case 'auth/wrong-password':
-          errorMessage = 'Incorrect password';
-          break;
-        case 'auth/invalid-credential':
-          errorMessage = 'Invalid email or password';
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak';
           break;
       }
 
@@ -87,22 +113,35 @@ export default function LoginScreen() {
               </Text>
             </View>
 
-            {/* Sign In Card */}
+            {/* Sign Up Card */}
             <Card style={styles.card}>
               <Card.Content>
-                {/* Sign In Header */}
+                {/* Sign Up Header */}
                 <Text
                   variant="titleLarge"
-                  style={[styles.signInTitle, { color: MD3Colors.primary20 }]}
+                  style={[styles.signUpTitle, { color: MD3Colors.primary20 }]}
                 >
-                  Sign In
+                  Sign Up
                 </Text>
                 <Text
                   variant="bodyMedium"
-                  style={[styles.signInSubtitle, { color: MD3Colors.primary20 }]}
+                  style={[styles.signUpSubtitle, { color: MD3Colors.primary20 }]}
                 >
-                  Sign in to continue.
+                  Create your account to get started.
                 </Text>
+
+                {/* Full Name Input */}
+                <TextInput
+                  label="Full Name"
+                  value={fullName}
+                  onChangeText={setFullName}
+                  mode="outlined"
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  left={<TextInput.Icon icon="account" />}
+                  style={styles.input}
+                  disabled={loading}
+                />
 
                 {/* Email Input */}
                 <TextInput
@@ -127,7 +166,7 @@ export default function LoginScreen() {
                   mode="outlined"
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
-                  autoComplete="password"
+                  autoComplete="password-new"
                   left={<TextInput.Icon icon="lock" />}
                   right={
                     <TextInput.Icon
@@ -139,56 +178,51 @@ export default function LoginScreen() {
                   disabled={loading}
                 />
 
-                {/* Keep Signed In & Forgot Password */}
-                <View style={styles.optionsRow}>
-                  <View style={styles.checkboxContainer}>
-                    <Checkbox.Android
-                      status={keepSignedIn ? 'checked' : 'unchecked'}
-                      onPress={() => setKeepSignedIn(!keepSignedIn)}
-                      color={MD3Colors.primary20}
-                      disabled={loading}
+                {/* Confirm Password Input */}
+                <TextInput
+                  label="Confirm Password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  mode="outlined"
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                  left={<TextInput.Icon icon="lock-check" />}
+                  right={
+                    <TextInput.Icon
+                      icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                     />
-                    <Text style={[styles.checkboxLabel, { color: MD3Colors.primary20 }]}>
-                      Keep me signed in
-                    </Text>
-                  </View>
+                  }
+                  style={styles.input}
+                  disabled={loading}
+                />
 
-                  <Button
-                    mode="text"
-                    onPress={() => {}}
-                    textColor={MD3Colors.primary20}
-                    style={styles.forgotButton}
-                    disabled={loading}
-                  >
-                    Forgot Password?
-                  </Button>
-                </View>
-
-                {/* Sign In Button */}
+                {/* Sign Up Button */}
                 <Button
                   mode="contained"
-                  onPress={handleLogin}
+                  onPress={handleSignUp}
                   loading={loading}
                   disabled={loading}
-                  style={styles.signInButton}
-                  contentStyle={styles.signInButtonContent}
+                  style={styles.signUpButton}
+                  contentStyle={styles.signUpButtonContent}
                 >
-                  {loading ? 'Signing In...' : 'Sign In'}
+                  {loading ? 'Creating Account...' : 'Sign Up'}
                 </Button>
 
-                {/* Sign Up Link */}
-                <View style={styles.signUpContainer}>
-                  <Text style={[styles.signUpText, { color: MD3Colors.primary20 }]}>
-                    Don't have an account?{' '}
+                {/* Sign In Link */}
+                <View style={styles.signInContainer}>
+                  <Text style={[styles.signInText, { color: MD3Colors.primary20 }]}>
+                    Already have an account?{' '}
                   </Text>
                   <Button
                     mode="text"
-                    onPress={() => router.push('/signup')}
+                    onPress={() => router.back()}
                     textColor={MD3Colors.primary20}
                     compact
                     disabled={loading}
                   >
-                    Sign Up
+                    Sign In
                   </Button>
                 </View>
               </Card.Content>
@@ -244,13 +278,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   card: {},
-  signInTitle: {
+  signUpTitle: {
     fontSize: 28,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 8,
   },
-  signInSubtitle: {
+  signUpSubtitle: {
     textAlign: 'center',
     marginBottom: 24,
     fontSize: 14,
@@ -258,38 +292,21 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 16,
   },
-  optionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 8,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: -8,
-  },
-  checkboxLabel: {
-    fontSize: 14,
-  },
-  forgotButton: {
-    marginRight: -8,
-  },
-  signInButton: {
+  signUpButton: {
     borderRadius: 8,
     marginBottom: 16,
+    marginTop: 8,
   },
-  signInButtonContent: {
+  signUpButtonContent: {
     paddingVertical: 8,
   },
-  signUpContainer: {
+  signInContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
   },
-  signUpText: {
+  signInText: {
     fontSize: 14,
   },
 });
