@@ -70,9 +70,16 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const fullEmail = email.includes('@') ? email : `${email}@gmail.com`;
-      await authService.signUp(fullEmail, password);
-      showMessage('Account created successfully!', 'success');
-      setTimeout(() => router.replace('/(tabs)'), 500);
+      const userCredential = await authService.signUp(fullEmail, password);
+
+      // Send verification email
+      await authService.sendVerificationEmail(userCredential.user);
+
+      // Navigate to verification screen
+      router.replace({
+        pathname: '/verify-email',
+        params: { email: fullEmail },
+      });
     } catch (error: any) {
       let errorMessage = 'Failed to create account';
 
@@ -88,6 +95,9 @@ export default function SignUpScreen() {
           break;
         case 'auth/weak-password':
           errorMessage = 'Password is too weak';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many requests. Please try again later';
           break;
       }
 
@@ -234,7 +244,7 @@ export default function SignUpScreen() {
         <Snackbar
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
-          duration={3000}
+          duration={5000}
           style={{
             backgroundColor: snackbarType === 'error' ? MD3Colors.error40 : MD3Colors.primary30,
           }}

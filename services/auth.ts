@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   User,
   UserCredential,
 } from 'firebase/auth';
@@ -32,5 +33,10 @@ export const authService = {
   // Get current user
   getCurrentUser: (): User | null => {
     return auth.currentUser;
+  },
+
+  // Send email verification
+  sendVerificationEmail: async (user: User): Promise<void> => {
+    return await sendEmailVerification(user);
   },
 };

@@ -41,7 +41,15 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const fullEmail = email.includes('@') ? email : `${email}@gmail.com`;
-      await authService.signIn(fullEmail, password);
+      const userCredential = await authService.signIn(fullEmail, password);
+
+      // Check if email is verified
+      if (!userCredential.user.emailVerified) {
+        await authService.signOut();
+        showMessage('Please verify your email before signing in. Check your inbox.', 'error');
+        return;
+      }
+
       showMessage('Logged in successfully!', 'success');
       setTimeout(() => router.replace('/(tabs)'), 500);
     } catch (error: any) {
