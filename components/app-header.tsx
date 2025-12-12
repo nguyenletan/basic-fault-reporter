@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React from 'react';
 import { Image, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { IconButton, MD3Colors, Searchbar, Text } from 'react-native-paper';
@@ -11,11 +12,15 @@ export function AppHeader() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const insets = useSafeAreaInsets();
 
+  const handleProfilePress = () => {
+    router.push('/profile');
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.content}>
         {/* Profile Avatar */}
-        <TouchableOpacity style={styles.profileButton}>
+        <TouchableOpacity style={styles.profileButton} onPress={handleProfilePress}>
           <View style={styles.avatar}>
             <Image
               source={{
