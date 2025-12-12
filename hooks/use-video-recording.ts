@@ -8,7 +8,11 @@ interface UseVideoRecordingProps {
   onVideoRecorded: (uri: string) => void;
 }
 
-export const useVideoRecording = ({ cameraRef, maxDuration, onVideoRecorded }: UseVideoRecordingProps) => {
+export const useVideoRecording = ({
+  cameraRef,
+  maxDuration,
+  onVideoRecorded,
+}: UseVideoRecordingProps) => {
   const [isRecording, setIsRecording] = useState(false);
 
   const startRecording = async () => {

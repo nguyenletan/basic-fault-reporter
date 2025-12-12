@@ -11,7 +11,12 @@ interface UsePhotoCaptureProps {
   setPhotos: (photos: CapturedPhoto[]) => void;
 }
 
-export const usePhotoCapture = ({ cameraRef, maxPhotos, photos, setPhotos }: UsePhotoCaptureProps) => {
+export const usePhotoCapture = ({
+  cameraRef,
+  maxPhotos,
+  photos,
+  setPhotos,
+}: UsePhotoCaptureProps) => {
   const [showCamera, setShowCamera] = useState(true);
 
   const takePhoto = async () => {

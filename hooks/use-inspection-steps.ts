@@ -19,7 +19,8 @@ export const useInspectionSteps = ({ hasAbnormalNoise, minPhotos }: UseInspectio
   const [step3VideoUri, setStep3VideoUri] = useState<string | null>(null);
 
   const photos = currentStep === 1 ? step1Photos : currentStep === 2 ? step2Photos : [];
-  const setPhotos = currentStep === 1 ? setStep1Photos : currentStep === 2 ? setStep2Photos : () => {};
+  const setPhotos =
+    currentStep === 1 ? setStep1Photos : currentStep === 2 ? setStep2Photos : () => {};
 
   const handleNextStep = () => {
     if (currentStep === 1 && photos.length < minPhotos) {

@@ -17,7 +17,15 @@ import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Card, Icon, IconButton, MD2Colors, Text } from 'react-native-paper';
+import {
+  ActivityIndicator,
+  Button,
+  Card,
+  Icon,
+  IconButton,
+  MD2Colors,
+  Text,
+} from 'react-native-paper';
 
 // Mock data - should match the alerts from initial.tsx
 const alerts: AlertType[] = [
@@ -159,7 +167,10 @@ export default function TakingPhotosScreen() {
       return;
     }
     if (hasAbnormalNoiseChecked && !stepManager.step3VideoUri) {
-      Alert.alert('Video Required', 'Please record a short video of the abnormal sound before analyzing.');
+      Alert.alert(
+        'Video Required',
+        'Please record a short video of the abnormal sound before analyzing.'
+      );
       return;
     }
 
@@ -178,7 +189,10 @@ export default function TakingPhotosScreen() {
       if (response.success && response.data) {
         setAnalysisResult(response.data.analysis);
       } else {
-        Alert.alert('Analysis Failed', response.error || 'Failed to analyze photos. Please try again.');
+        Alert.alert(
+          'Analysis Failed',
+          response.error || 'Failed to analyze photos. Please try again.'
+        );
       }
     } catch (error) {
       console.error('Error analyzing photos:', error);
@@ -308,7 +322,9 @@ export default function TakingPhotosScreen() {
 
           {/* AI Provider Selection */}
           {((stepManager.currentStep === 2 && !hasAbnormalNoiseChecked) ||
-            (stepManager.currentStep === 3 && hasAbnormalNoiseChecked && stepManager.step3VideoUri)) &&
+            (stepManager.currentStep === 3 &&
+              hasAbnormalNoiseChecked &&
+              stepManager.step3VideoUri)) &&
             stepManager.step2Photos.length >= MIN_PHOTOS &&
             stepManager.step1Photos.length >= MIN_PHOTOS &&
             !analysisResult && (
