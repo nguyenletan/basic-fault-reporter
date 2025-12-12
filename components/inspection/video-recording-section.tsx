@@ -129,6 +129,7 @@ const styles = StyleSheet.create({
   videoCamera: {
     width: '100%',
     backgroundColor: '#000',
+    height: 500,
   },
   videoCameraOverlay: {
     flex: 1,
