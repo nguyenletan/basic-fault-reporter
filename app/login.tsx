@@ -5,7 +5,6 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 're
 import {
   Button,
   Card,
-  Checkbox,
   MD3Colors,
   Snackbar,
   Surface,
@@ -18,7 +17,6 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -147,25 +145,13 @@ export default function LoginScreen() {
                   disabled={loading}
                 />
 
-                {/* Keep Signed In & Forgot Password */}
-                <View style={styles.optionsRow}>
-                  <View style={styles.checkboxContainer}>
-                    <Checkbox.Android
-                      status={keepSignedIn ? 'checked' : 'unchecked'}
-                      onPress={() => setKeepSignedIn(!keepSignedIn)}
-                      color={MD3Colors.primary20}
-                      disabled={loading}
-                    />
-                    <Text style={[styles.checkboxLabel, { color: MD3Colors.primary20 }]}>
-                      Keep me signed in
-                    </Text>
-                  </View>
-
+                {/* Forgot Password */}
+                <View style={styles.forgotPasswordContainer}>
                   <Button
                     mode="text"
                     onPress={() => {}}
                     textColor={MD3Colors.primary20}
-                    style={styles.forgotButton}
+                    compact
                     disabled={loading}
                   >
                     Forgot Password?
@@ -266,23 +252,10 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 16,
   },
-  optionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
     marginBottom: 20,
     marginTop: 8,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: -8,
-  },
-  checkboxLabel: {
-    fontSize: 14,
-  },
-  forgotButton: {
-    marginRight: -8,
   },
   signInButton: {
     borderRadius: 8,
