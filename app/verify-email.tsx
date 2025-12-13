@@ -2,15 +2,7 @@ import { authService } from '@/services/auth';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import {
-  Button,
-  Card,
-  MD3Colors,
-  Snackbar,
-  Surface,
-  Text,
-  useTheme,
-} from 'react-native-paper';
+import { Button, Card, MD3Colors, Snackbar, Surface, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const RESEND_COOLDOWN = 60; // 60 seconds cooldown
@@ -87,17 +79,11 @@ export default function VerifyEmailScreen() {
               Account Created!
             </Text>
 
-            <Text
-              variant="bodyLarge"
-              style={[styles.subtitle, { color: MD3Colors.primary20 }]}
-            >
+            <Text variant="bodyLarge" style={[styles.subtitle, { color: MD3Colors.primary20 }]}>
               We've sent a verification email to:
             </Text>
 
-            <Text
-              variant="bodyLarge"
-              style={[styles.email, { color: MD3Colors.primary30 }]}
-            >
+            <Text variant="bodyLarge" style={[styles.email, { color: MD3Colors.primary30 }]}>
               {email}
             </Text>
 
@@ -139,8 +125,8 @@ export default function VerifyEmailScreen() {
               {loading
                 ? 'Sending...'
                 : cooldown > 0
-                ? `Resend in ${cooldown}s`
-                : 'Resend Verification Email'}
+                  ? `Resend in ${cooldown}s`
+                  : 'Resend Verification Email'}
             </Button>
 
             {/* Help Text */}
@@ -150,13 +136,10 @@ export default function VerifyEmailScreen() {
                 size={16}
                 color={MD3Colors.primary40}
               />
-              <Text
-                variant="bodySmall"
-                style={[styles.helpText, { color: MD3Colors.primary40 }]}
-              >
+              <Text variant="bodySmall" style={[styles.helpText, { color: MD3Colors.primary40 }]}>
                 {cooldown > 0
                   ? 'For security, you can resend the email after the cooldown timer expires.'
-                  : 'Didn\'t receive the email? Check your spam folder or click resend.'}
+                  : "Didn't receive the email? Check your spam folder or click resend."}
               </Text>
             </View>
           </Card.Content>

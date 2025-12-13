@@ -1,22 +1,27 @@
+import { NavigationButtons } from '@/components/inspection/navigation-buttons';
+import { StepIndicator } from '@/components/inspection/step-indicator';
+import { VideoRecordingSection } from '@/components/inspection/video-recording-section';
 import { AIProviderSelectorCard } from '@/components/scanning/ai-provider-selector-card';
 import { AnalysisResultsCard } from '@/components/scanning/analysis-results-card';
 import { CameraCard } from '@/components/scanning/camera-card';
 import { PhotosGridCard } from '@/components/scanning/photos-grid-card';
 import { UploadOptionsCard } from '@/components/scanning/upload-options-card';
 import { ThemedView } from '@/components/themed-view';
-import { NavigationButtons } from '@/components/inspection/navigation-buttons';
-import { StepIndicator } from '@/components/inspection/step-indicator';
-import { VideoRecordingSection } from '@/components/inspection/video-recording-section';
 import { useEquipmentLocation } from '@/hooks/use-equipment-location';
 import { useInspectionSteps } from '@/hooks/use-inspection-steps';
 import { usePhotoCapture } from '@/hooks/use-photo-capture';
 import { useVideoRecording } from '@/hooks/use-video-recording';
 import { AIProvider, analyzeFaults } from '@/services/ai-fault-detection';
 import { Alert as AlertType } from '@/types/types';
-import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
+import {
+  CameraType,
+  CameraView,
+  useCameraPermissions,
+  useMicrophonePermissions,
+} from 'expo-camera';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
@@ -78,7 +83,8 @@ export default function TakingPhotosScreen() {
   const alert = alerts.find((a) => a.id === Number(id));
   const { location } = useEquipmentLocation(String(id));
   const cameraRef = useRef<CameraView>(null);
-  const [permission, requestPermission] = useCameraPermissions();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
   const [facing, setFacing] = useState<CameraType>('back');
 
   const MAX_PHOTOS = 5;
@@ -110,41 +116,87 @@ export default function TakingPhotosScreen() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 
-  // Handle camera permissions
-  if (!permission) {
-    return (
-      <>
-        <Stack.Screen options={{ title: 'Equipment Scanning', headerShown: true }} />
-        <ThemedView style={styles.container}>
-          <View style={styles.centerContent}>
-            <ActivityIndicator size="large" />
-            <Text variant="bodyLarge">Loading camera...</Text>
-          </View>
-        </ThemedView>
-      </>
+  const requestPermissions = () => {
+    Alert.alert(
+      'Permissions Required',
+      'This app needs access to your camera and microphone to:\n\n• Capture photos of equipment\n• Record videos with audio for fault detection\n\nYour privacy is important. Media is only used for analysis.',
+      [
+        {
+          text: 'Not Now',
+          style: 'cancel',
+        },
+        {
+          text: 'Allow',
+          onPress: async () => {
+            if (!cameraPermission?.granted) {
+              const camResult = await requestCameraPermission();
+              if (!camResult.granted) {
+                Alert.alert(
+                  'Camera Permission Denied',
+                  'Camera access is required to capture photos. Please enable it in Settings > Privacy > Camera.',
+                  [{ text: 'OK' }]
+                );
+                return;
+              }
+            }
+            if (!microphonePermission?.granted) {
+              const micResult = await requestMicrophonePermission();
+              if (!micResult.granted) {
+                Alert.alert(
+                  'Microphone Permission Denied',
+                  'Microphone access is required for video recording with audio. Please enable it in Settings > Privacy > Microphone.',
+                  [{ text: 'OK' }]
+                );
+              }
+            }
+          },
+        },
+      ]
     );
-  }
+  };
 
-  if (!permission.granted) {
-    return (
-      <>
-        <Stack.Screen options={{ title: 'Camera Permission', headerShown: true }} />
-        <ThemedView style={styles.container}>
-          <View style={styles.centerContent}>
-            <Icon source="camera-off" size={64} color={MD2Colors.orange500} />
-            <Text variant="headlineSmall" style={styles.permissionTitle}>
-              Camera Permission Required
-            </Text>
-            <Text variant="bodyMedium" style={styles.permissionMessage}>
-              We need access to your camera to capture photos of the equipment for fault detection.
-            </Text>
-            <Button mode="contained" onPress={requestPermission} style={styles.permissionButton}>
-              Grant Permission
-            </Button>
-          </View>
-        </ThemedView>
-      </>
-    );
+  // Handle camera and microphone permissions (skip on web - browsers handle this automatically)
+  if (Platform.OS !== 'web') {
+    if (!cameraPermission || !microphonePermission) {
+      return (
+        <>
+          <Stack.Screen options={{ title: 'Equipment Scanning', headerShown: true }} />
+          <ThemedView style={styles.container}>
+            <View style={styles.centerContent}>
+              <ActivityIndicator size="large" />
+              <Text variant="bodyLarge">Loading permissions...</Text>
+            </View>
+          </ThemedView>
+        </>
+      );
+    }
+
+    if (!cameraPermission.granted || !microphonePermission.granted) {
+      const missingPermissions = [];
+      if (!cameraPermission.granted) missingPermissions.push('Camera');
+      if (!microphonePermission.granted) missingPermissions.push('Microphone');
+
+      return (
+        <>
+          <Stack.Screen options={{ title: 'Permissions Required', headerShown: true }} />
+          <ThemedView style={styles.container}>
+            <View style={styles.centerContent}>
+              <Icon source="camera-off" size={64} color={MD2Colors.orange500} />
+              <Text variant="headlineSmall" style={styles.permissionTitle}>
+                Permissions Required
+              </Text>
+              <Text variant="bodyMedium" style={styles.permissionMessage}>
+                We need access to your {missingPermissions.join(' and ')} to capture photos and
+                record videos of equipment for fault detection.
+              </Text>
+              <Button mode="contained" onPress={requestPermissions} style={styles.permissionButton}>
+                Grant Permissions
+              </Button>
+            </View>
+          </ThemedView>
+        </>
+      );
+    }
   }
 
   const toggleCamera = () => {
