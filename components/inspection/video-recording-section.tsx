@@ -1,6 +1,7 @@
 import { CameraType, CameraView } from 'expo-camera';
-import React, { RefObject } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
+import React, { RefObject, useState } from 'react';
+import { Modal, StyleSheet, View, Pressable, Dimensions } from 'react-native';
 import { Button, Card, Icon, IconButton, MD2Colors, MD3Colors, Text } from 'react-native-paper';
 
 interface VideoRecordingSectionProps {
@@ -26,30 +27,71 @@ export const VideoRecordingSection: React.FC<VideoRecordingSectionProps> = ({
   onToggleCamera,
   onRemoveVideo,
 }) => {
+  const [showPreview, setShowPreview] = useState(false);
+
   if (videoUri) {
     // Show video preview after recording
     return (
-      <Card style={styles.videoPreviewCard}>
-        <Card.Content>
-          <View style={styles.videoPreviewHeader}>
-            <Icon source="check-circle" size={24} color={MD3Colors.primary40} />
-            <Text variant="titleMedium" style={styles.videoPreviewTitle}>
-              Video Recorded Successfully
+      <>
+        <Card style={styles.videoPreviewCard}>
+          <Card.Content>
+            <View style={styles.videoPreviewHeader}>
+              <Icon source="check-circle" size={24} color={MD3Colors.primary40} />
+              <Text variant="titleMedium" style={styles.videoPreviewTitle}>
+                Video Recorded Successfully
+              </Text>
+            </View>
+            <Text variant="bodySmall" style={styles.videoPreviewSubtitle}>
+              Video saved and ready for AI analysis
             </Text>
-          </View>
-          <Text variant="bodySmall" style={styles.videoPreviewSubtitle}>
-            Video saved and ready for AI analysis
-          </Text>
-          <View style={styles.videoPreviewActions}>
-            <Button mode="outlined" onPress={onRemoveVideo} icon="delete">
-              Delete Video
-            </Button>
-            <Button mode="contained" disabled icon="play">
-              Preview (Coming Soon)
-            </Button>
-          </View>
-        </Card.Content>
-      </Card>
+            <View style={styles.videoPreviewActions}>
+              <Button mode="outlined" onPress={onRemoveVideo} icon="delete">
+                Delete Video
+              </Button>
+              <Button mode="contained" onPress={() => setShowPreview(true)} icon="play">
+                Preview Video
+              </Button>
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* Video Preview Modal */}
+        <Modal
+          visible={showPreview}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowPreview(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setShowPreview(false)}>
+            <View style={styles.modalContent}>
+              <Pressable onPress={(e) => e.stopPropagation()}>
+                <Card style={styles.videoPlayerCard}>
+                  <Card.Content style={styles.videoPlayerContent}>
+                    <View style={styles.videoPlayerHeader}>
+                      <Text variant="titleMedium" style={styles.videoPlayerTitle}>
+                        Video Preview
+                      </Text>
+                      <IconButton
+                        icon="close"
+                        size={24}
+                        onPress={() => setShowPreview(false)}
+                        style={styles.closeButton}
+                      />
+                    </View>
+                    <Video
+                      source={{ uri: videoUri }}
+                      style={styles.videoPlayer}
+                      useNativeControls
+                      resizeMode={ResizeMode.CONTAIN}
+                      shouldPlay
+                    />
+                  </Card.Content>
+                </Card>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
+      </>
     );
   }
 
@@ -193,5 +235,39 @@ const styles = StyleSheet.create({
   videoPreviewActions: {
     flexDirection: 'row',
     gap: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 600,
+  },
+  videoPlayerCard: {
+    overflow: 'hidden',
+  },
+  videoPlayerContent: {
+    padding: 0,
+  },
+  videoPlayerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    paddingBottom: 8,
+  },
+  videoPlayerTitle: {
+    fontWeight: '600',
+  },
+  closeButton: {
+    margin: 0,
+  },
+  videoPlayer: {
+    width: '100%',
+    height: Dimensions.get('window').height * 0.5,
+    backgroundColor: '#000',
   },
 });
