@@ -71,7 +71,14 @@ export const VideoRecordingSection: React.FC<VideoRecordingSectionProps> = ({
 
       <Card style={styles.videoCard}>
         <Card.Content style={styles.videoContent}>
-          <CameraView ref={cameraRef} style={styles.videoCamera} facing={facing} mode="video">
+          <CameraView
+            key={facing}
+            ref={cameraRef}
+            style={styles.videoCamera}
+            facing={facing}
+            mode="video"
+            active={true}
+          >
             <View style={styles.videoCameraOverlay}>
               {isRecording && (
                 <View style={styles.recordingIndicator}>

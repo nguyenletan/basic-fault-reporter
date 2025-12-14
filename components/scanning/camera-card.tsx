@@ -22,7 +22,7 @@ export function CameraCard({ cameraRef, facing, onTakePhoto, onToggleCamera }: C
         </View>
         <Divider style={styles.divider} />
         <View style={styles.cameraContainer}>
-          <CameraView ref={cameraRef} style={styles.camera} facing={facing}>
+          <CameraView key={facing} ref={cameraRef} style={styles.camera} facing={facing} active={true}>
             <View style={styles.cameraOverlay}>
               <TouchableOpacity style={styles.flipButton} onPress={onToggleCamera}>
                 <Icon source="camera-flip" size={32} color="white" />
