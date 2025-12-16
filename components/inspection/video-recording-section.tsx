@@ -1,7 +1,7 @@
 import { CameraType, CameraView } from 'expo-camera';
 import { Video, ResizeMode } from 'expo-av';
 import React, { RefObject, useState } from 'react';
-import { Modal, StyleSheet, View, Pressable, Dimensions } from 'react-native';
+import { Modal, Platform, StyleSheet, View, Pressable, Dimensions } from 'react-native';
 import { Button, Card, Icon, IconButton, MD2Colors, MD3Colors, Text } from 'react-native-paper';
 
 interface VideoRecordingSectionProps {
@@ -96,6 +96,28 @@ export const VideoRecordingSection: React.FC<VideoRecordingSectionProps> = ({
   }
 
   // Show recording interface
+  // On web, video recording is not fully supported, show a message
+  if (Platform.OS === 'web') {
+    return (
+      <Card>
+        <Card.Content style={styles.videoInstructions}>
+          <Icon source="alert-circle-outline" size={48} color={MD2Colors.orange500} />
+          <Text variant="titleMedium" style={styles.videoInstructionsTitle}>
+            Video Recording Not Available on Web
+          </Text>
+          <Text variant="bodyMedium" style={styles.videoInstructionsText}>
+            Video recording with audio is only available on mobile devices (iOS/Android). Please use
+            the mobile app to record videos of equipment abnormal sounds.
+          </Text>
+          <Text variant="bodySmall" style={styles.videoInstructionsHint}>
+            You can continue with the inspection process. The video step will be marked as optional
+            on web.
+          </Text>
+        </Card.Content>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card>
@@ -167,6 +189,12 @@ const styles = StyleSheet.create({
   videoInstructionsText: {
     textAlign: 'center',
     opacity: 0.7,
+  },
+  videoInstructionsHint: {
+    textAlign: 'center',
+    opacity: 0.6,
+    marginTop: 12,
+    fontStyle: 'italic',
   },
   videoCard: {
     overflow: 'hidden',

@@ -60,25 +60,30 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   // Step 2: Show Back and Next/Analyze
   if (currentStep === 2) {
     return (
-      <View style={styles.navigationButtons}>
-        <Button mode="outlined" onPress={onBack} style={styles.navButton}>
-          Back
-        </Button>
+      <View style={styles.finalNavigationButtons}>
         {hasAbnormalNoise ? (
           <Button mode="contained" onPress={onNext} style={styles.navButton} disabled={!canProceed}>
             Next Step
           </Button>
         ) : (
-          <Button
-            mode="contained"
-            onPress={onAnalyze}
-            style={styles.navButton}
-            disabled={!canProceed || isAnalyzing}
-            loading={isAnalyzing}
-          >
-            {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
-          </Button>
+          <>
+            <Button mode="contained" style={styles.navButton}>
+              Submit
+            </Button>
+            <Button
+              mode="contained"
+              onPress={onAnalyze}
+              style={styles.navButton}
+              disabled={!canProceed || isAnalyzing}
+              loading={isAnalyzing}
+            >
+              {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+            </Button>
+          </>
         )}
+        <Button mode="contained-tonal" onPress={onBack} style={styles.navButton}>
+          Back
+        </Button>
       </View>
     );
   }
@@ -86,9 +91,9 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   // Step 3: Show Back and Analyze
   if (currentStep === 3) {
     return (
-      <View style={styles.navigationButtons}>
-        <Button mode="outlined" onPress={onBack} style={styles.navButton}>
-          Back
+      <View style={styles.finalNavigationButtons}>
+        <Button mode="contained" style={styles.navButton}>
+          Submit
         </Button>
         <Button
           mode="contained"
@@ -98,6 +103,9 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
           loading={isAnalyzing}
         >
           {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+        </Button>
+        <Button mode="contained-tonal" onPress={onBack} style={styles.navButton}>
+          Back
         </Button>
       </View>
     );
@@ -111,6 +119,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginTop: 8,
+  },
+
+  finalNavigationButtons: {
+    marginTop: 8,
+    flexDirection: 'column',
+    gap: 12,
   },
   navButton: {
     flex: 1,

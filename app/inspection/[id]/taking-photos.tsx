@@ -218,7 +218,8 @@ export default function TakingPhotosScreen() {
       );
       return;
     }
-    if (hasAbnormalNoiseChecked && !stepManager.step3VideoUri) {
+    // Video is required on mobile, but optional on web (video recording not supported)
+    if (hasAbnormalNoiseChecked && !stepManager.step3VideoUri && Platform.OS !== 'web') {
       Alert.alert(
         'Video Required',
         'Please record a short video of the abnormal sound before analyzing.'
@@ -281,12 +282,14 @@ export default function TakingPhotosScreen() {
       ? stepManager.photos.length >= MIN_PHOTOS
       : stepManager.currentStep === 2
         ? stepManager.photos.length >= MIN_PHOTOS
-        : stepManager.step3VideoUri !== null;
+        : Platform.OS === 'web'
+          ? true // On web, video is optional, can always proceed
+          : stepManager.step3VideoUri !== null;
 
   const canAnalyze =
     stepManager.step1Photos.length >= MIN_PHOTOS &&
     stepManager.step2Photos.length >= MIN_PHOTOS &&
-    (!hasAbnormalNoiseChecked || stepManager.step3VideoUri !== null);
+    (!hasAbnormalNoiseChecked || stepManager.step3VideoUri !== null || Platform.OS === 'web'); // On web, video is optional
 
   return (
     <>
@@ -376,7 +379,7 @@ export default function TakingPhotosScreen() {
           {((stepManager.currentStep === 2 && !hasAbnormalNoiseChecked) ||
             (stepManager.currentStep === 3 &&
               hasAbnormalNoiseChecked &&
-              stepManager.step3VideoUri)) &&
+              (stepManager.step3VideoUri || Platform.OS === 'web'))) &&
             stepManager.step2Photos.length >= MIN_PHOTOS &&
             stepManager.step1Photos.length >= MIN_PHOTOS &&
             !analysisResult && (
