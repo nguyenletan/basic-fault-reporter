@@ -1,5 +1,5 @@
 import { CameraType, CameraView } from 'expo-camera';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import React, { RefObject, useState } from 'react';
 import { Modal, Platform, StyleSheet, View, Pressable, Dimensions } from 'react-native';
 import { Button, Card, Icon, IconButton, MD2Colors, MD3Colors, Text } from 'react-native-paper';
@@ -28,6 +28,10 @@ export const VideoRecordingSection: React.FC<VideoRecordingSectionProps> = ({
   onRemoveVideo,
 }) => {
   const [showPreview, setShowPreview] = useState(false);
+  const player = useVideoPlayer(videoUri || '', (player) => {
+    player.loop = false;
+    player.play();
+  });
 
   if (videoUri) {
     // Show video preview after recording
@@ -78,12 +82,12 @@ export const VideoRecordingSection: React.FC<VideoRecordingSectionProps> = ({
                         style={styles.closeButton}
                       />
                     </View>
-                    <Video
-                      source={{ uri: videoUri }}
+                    <VideoView
+                      player={player}
                       style={styles.videoPlayer}
-                      useNativeControls
-                      resizeMode={ResizeMode.CONTAIN}
-                      shouldPlay
+                      contentFit="contain"
+                      allowsFullscreen
+                      nativeControls
                     />
                   </Card.Content>
                 </Card>
