@@ -27,6 +27,17 @@ export const useVideoRecording = ({
   const startRecording = async () => {
     if (!cameraRef.current || isRecording) return;
 
+    // Check if recordAsync is available
+    if (typeof cameraRef.current.recordAsync !== 'function') {
+      Alert.alert(
+        'Recording Not Supported',
+        Platform.OS === 'web'
+          ? 'Video recording is not yet fully supported in your web browser. Please use the mobile app (iOS/Android) for video recording functionality.'
+          : 'Video recording is not supported on this device.'
+      );
+      return;
+    }
+
     // Check microphone permission before recording (skip on web - browsers handle this automatically)
     if (Platform.OS !== 'web' && !microphonePermission?.granted) {
       Alert.alert(
@@ -63,22 +74,34 @@ export const useVideoRecording = ({
 
     try {
       setIsRecording(true);
+      console.log('Starting video recording...');
+
       const video = await cameraRef.current.recordAsync({
         maxDuration,
       });
 
+      console.log('Video recording completed:', video);
+
       if (video && video.uri) {
+        console.log('Video URI received:', video.uri);
         onVideoRecorded(video.uri);
         Alert.alert('Success', 'Video recorded successfully!');
       } else {
+        console.error('No video URI in response. Video object:', JSON.stringify(video));
         throw new Error('No video URI returned from recording');
       }
     } catch (error) {
       console.error('Error recording video:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      // On web, provide more specific guidance
+      const platformSpecificHelp = Platform.OS === 'web'
+        ? '\n\nOn web browsers:\n• Allow camera and microphone access when prompted\n• Ensure you\'re using HTTPS or localhost\n• Try a different browser (Chrome/Firefox recommended)'
+        : '\n\nPlease ensure:\n• Camera and microphone permissions are granted\n• Device has sufficient storage space\n• Try restarting the app if the issue persists';
+
       Alert.alert(
         'Recording Failed',
-        `Failed to record video: ${errorMessage}\n\nPlease ensure:\n• Camera and microphone permissions are granted\n• Device has sufficient storage space\n• Try restarting the app if the issue persists`
+        `Failed to record video: ${errorMessage}${platformSpecificHelp}`
       );
     } finally {
       setIsRecording(false);

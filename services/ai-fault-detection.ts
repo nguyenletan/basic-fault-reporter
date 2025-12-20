@@ -191,8 +191,40 @@ const analyzeWithGemini = async (
     // Convert local image URIs to base64 (without data URI prefix for Gemini)
     const base64Images = await Promise.all(imageUris.map((uri) => convertImageToBase64(uri)));
 
+    // Prepare request parts
+    const parts: any[] = [
+      {
+        text: buildAnalysisPrompt(!!videoUri),
+      },
+      ...base64Images.map((base64Data) => ({
+        inline_data: {
+          mime_type: 'image/jpeg',
+          data: base64Data,
+        },
+      })),
+    ];
+
+    // Add video if available
+    if (videoUri) {
+      try {
+        const videoBase64 = await convertImageToBase64(videoUri);
+        // Simple MIME type detection
+        const mimeType = videoUri.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4';
+
+        parts.push({
+          inline_data: {
+            mime_type: mimeType,
+            data: videoBase64,
+          },
+        });
+      } catch (videoError) {
+        console.error('Error preparing video for Gemini:', videoError);
+        // Proceed without video if conversion fails
+      }
+    }
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -201,17 +233,7 @@ const analyzeWithGemini = async (
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: buildAnalysisPrompt(!!videoUri),
-                },
-                ...base64Images.map((base64Data) => ({
-                  inline_data: {
-                    mime_type: 'image/jpeg',
-                    data: base64Data,
-                  },
-                })),
-              ],
+              parts,
             },
           ],
           generationConfig: {

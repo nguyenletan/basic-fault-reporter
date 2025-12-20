@@ -100,30 +100,26 @@ export const VideoRecordingSection: React.FC<VideoRecordingSectionProps> = ({
   }
 
   // Show recording interface
-  // On web, video recording is not fully supported, show a message
-  if (Platform.OS === 'web') {
-    return (
-      <Card>
-        <Card.Content style={styles.videoInstructions}>
-          <Icon source="alert-circle-outline" size={48} color={MD2Colors.orange500} />
-          <Text variant="titleMedium" style={styles.videoInstructionsTitle}>
-            Video Recording Not Available on Web
-          </Text>
-          <Text variant="bodyMedium" style={styles.videoInstructionsText}>
-            Video recording with audio is only available on mobile devices (iOS/Android). Please use
-            the mobile app to record videos of equipment abnormal sounds.
-          </Text>
-          <Text variant="bodySmall" style={styles.videoInstructionsHint}>
-            You can continue with the inspection process. The video step will be marked as optional
-            on web.
-          </Text>
-        </Card.Content>
-      </Card>
-    );
-  }
-
   return (
     <>
+      {/* Web Warning Banner */}
+      {Platform.OS === 'web' && (
+        <Card style={styles.webWarningCard}>
+          <Card.Content style={styles.webWarning}>
+            <Icon source="information-outline" size={24} color={MD2Colors.orange500} />
+            <View style={styles.webWarningText}>
+              <Text variant="bodyMedium" style={styles.webWarningTitle}>
+                Web Browser Limitation
+              </Text>
+              <Text variant="bodySmall" style={styles.webWarningSubtitle}>
+                Video recording on web browsers may have limited support. For best results, use the
+                mobile app (iOS/Android).
+              </Text>
+            </View>
+          </Card.Content>
+        </Card>
+      )}
+
       <Card>
         <Card.Content style={styles.videoInstructions}>
           <Icon source="video" size={48} color={MD3Colors.primary40} />
@@ -181,6 +177,24 @@ export const VideoRecordingSection: React.FC<VideoRecordingSectionProps> = ({
 };
 
 const styles = StyleSheet.create({
+  webWarningCard: {
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+  },
+  webWarning: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'flex-start',
+  },
+  webWarningText: {
+    flex: 1,
+    gap: 4,
+  },
+  webWarningTitle: {
+    fontWeight: '600',
+  },
+  webWarningSubtitle: {
+    opacity: 0.8,
+  },
   videoInstructions: {
     alignItems: 'center',
     gap: 12,
@@ -193,12 +207,6 @@ const styles = StyleSheet.create({
   videoInstructionsText: {
     textAlign: 'center',
     opacity: 0.7,
-  },
-  videoInstructionsHint: {
-    textAlign: 'center',
-    opacity: 0.6,
-    marginTop: 12,
-    fontStyle: 'italic',
   },
   videoCard: {
     overflow: 'hidden',

@@ -218,7 +218,7 @@ export default function TakingPhotosScreen() {
       );
       return;
     }
-    // Video is required on mobile, but optional on web (video recording not supported)
+    // Video is required when abnormal noise is checked (optional on web due to browser limitations)
     if (hasAbnormalNoiseChecked && !stepManager.step3VideoUri && Platform.OS !== 'web') {
       Alert.alert(
         'Video Required',
@@ -282,14 +282,12 @@ export default function TakingPhotosScreen() {
       ? stepManager.photos.length >= MIN_PHOTOS
       : stepManager.currentStep === 2
         ? stepManager.photos.length >= MIN_PHOTOS
-        : Platform.OS === 'web'
-          ? true // On web, video is optional, can always proceed
-          : stepManager.step3VideoUri !== null;
+        : stepManager.step3VideoUri !== null || Platform.OS === 'web'; // Video optional on web
 
   const canAnalyze =
     stepManager.step1Photos.length >= MIN_PHOTOS &&
     stepManager.step2Photos.length >= MIN_PHOTOS &&
-    (!hasAbnormalNoiseChecked || stepManager.step3VideoUri !== null || Platform.OS === 'web'); // On web, video is optional
+    (!hasAbnormalNoiseChecked || stepManager.step3VideoUri !== null || Platform.OS === 'web'); // Video optional on web
 
   return (
     <>
