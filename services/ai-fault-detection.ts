@@ -5,6 +5,8 @@
  * for analyzing equipment images and detecting potential faults.
  */
 
+import { buildAnalysisPrompt } from './prompts/ai-fault-analysis-prompts';
+
 export type AIProvider = 'openai' | 'gemini' | 'grok';
 
 export interface FaultAnalysisRequest {
@@ -102,10 +104,6 @@ const analyzeWithOpenAI = async (
       })
     );
 
-    const videoNote = videoUri
-      ? '\n\nNOTE: A video recording of abnormal sound has been captured and is available for reference. Please consider potential sound-related issues (vibration, loose components, bearing wear, etc.) in your analysis.'
-      : '';
-
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -120,16 +118,7 @@ const analyzeWithOpenAI = async (
             content: [
               {
                 type: 'text',
-                text: `You are an expert equipment maintenance technician. Analyze the provided equipment images for potential faults, defects, or maintenance issues.
-
-Please provide:
-1. Overall equipment status and condition
-2. Identified components visible in the images
-3. Potential issues or defects detected
-4. Maintenance recommendations
-5. Severity assessment (low/medium/high/critical)
-
-Format your response clearly with sections for detected issues and recommendations.${videoNote}`,
+                text: buildAnalysisPrompt(!!videoUri),
               },
               ...base64Images.map((imageData) => ({
                 type: 'image_url',
@@ -202,10 +191,6 @@ const analyzeWithGemini = async (
     // Convert local image URIs to base64 (without data URI prefix for Gemini)
     const base64Images = await Promise.all(imageUris.map((uri) => convertImageToBase64(uri)));
 
-    const videoNote = videoUri
-      ? '\n\nNOTE: A video recording of abnormal sound has been captured and is available for reference. Please consider potential sound-related issues (vibration, loose components, bearing wear, etc.) in your analysis.'
-      : '';
-
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
@@ -218,16 +203,7 @@ const analyzeWithGemini = async (
             {
               parts: [
                 {
-                  text: `You are an expert equipment maintenance technician. Analyze the provided equipment images for potential faults, defects, or maintenance issues.
-
-Please provide:
-1. Overall equipment status and condition
-2. Identified components visible in the images
-3. Potential issues or defects detected
-4. Maintenance recommendations
-5. Severity assessment (low/medium/high/critical)
-
-Format your response clearly with sections for detected issues and recommendations.${videoNote}`,
+                  text: buildAnalysisPrompt(!!videoUri),
                 },
                 ...base64Images.map((base64Data) => ({
                   inline_data: {
@@ -310,10 +286,6 @@ const analyzeWithGrok = async (
       })
     );
 
-    const videoNote = videoUri
-      ? '\n\nNOTE: A video recording of abnormal sound has been captured and is available for reference. Please consider potential sound-related issues (vibration, loose components, bearing wear, etc.) in your analysis.'
-      : '';
-
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -328,16 +300,7 @@ const analyzeWithGrok = async (
             content: [
               {
                 type: 'text',
-                text: `You are an expert equipment maintenance technician. Analyze the provided equipment images for potential faults, defects, or maintenance issues.
-
-Please provide:
-1. Overall equipment status and condition
-2. Identified components visible in the images
-3. Potential issues or defects detected
-4. Maintenance recommendations
-5. Severity assessment (low/medium/high/critical)
-
-Format your response clearly with sections for detected issues and recommendations.${videoNote}`,
+                text: buildAnalysisPrompt(!!videoUri),
               },
               ...base64Images.map((imageData) => ({
                 type: 'image_url',
