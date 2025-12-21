@@ -254,7 +254,9 @@ const analyzeWithGemini = async (
     }
 
     const data = await response.json();
+    console.log('Gemini response:', data);
     const analysisText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No analysis generated';
+    console.log('Gemini analysis text:', analysisText);
 
     // Parse the response to extract issues and recommendations
     const detectedIssues = extractIssues(analysisText);
@@ -315,7 +317,7 @@ const analyzeWithGrok = async (
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'grok-vision-beta',
+        model: 'grok-2-vision-1212',
         messages: [
           {
             role: 'user',
@@ -346,7 +348,9 @@ const analyzeWithGrok = async (
     }
 
     const data = await response.json();
+    console.log('Grok response:', data);
     const analysisText = data.choices?.[0]?.message?.content || 'No analysis generated';
+    console.log('Grok analysis text:', analysisText);
 
     // Parse the response to extract issues and recommendations
     const detectedIssues = extractIssues(analysisText);
