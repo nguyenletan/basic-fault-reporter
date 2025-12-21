@@ -112,7 +112,7 @@ export default function TakingPhotosScreen() {
     onVideoRecorded: stepManager.setStep3VideoUri,
   });
 
-  const [selectedAI, setSelectedAI] = useState<AIProvider>('openai');
+  const [selectedAI, setSelectedAI] = useState<AIProvider>('gemini');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 

@@ -142,7 +142,16 @@ const analyzeWithOpenAI = async (
     }
 
     const data = await response.json();
-    const analysisText = data.choices[0]?.message?.content || 'No analysis generated';
+    console.log('OpenAI response:', data);
+
+    // Support multiple response formats (v1/chat/completions and v1/responses)
+    const analysisText =
+      data.choices?.[0]?.message?.content ||
+      data.output?.message?.content ||
+      data.output?.content ||
+      'No analysis generated';
+
+    console.log('OpenAI analysis text:', analysisText);
 
     // Parse the response to extract issues and recommendations
     const detectedIssues = extractIssues(analysisText);

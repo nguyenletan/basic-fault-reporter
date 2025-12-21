@@ -14,7 +14,7 @@ export function AIProviderSelectorCard({ selectedAI, onSelectAI }: AIProviderSel
   const getProviderName = (provider: AIProvider) => {
     switch (provider) {
       case 'openai':
-        return 'OpenAI GPT-4 Vision';
+        return 'OpenAI GPT-5.2 Pro';
       case 'gemini':
         return 'Google Gemini Pro Vision';
       case 'grok':
@@ -54,18 +54,6 @@ export function AIProviderSelectorCard({ selectedAI, onSelectAI }: AIProviderSel
             value={selectedAI}
           >
             <View style={styles.radioItem}>
-              <RadioButton.Android value="openai" />
-              <View style={styles.radioContent}>
-                <Text variant="bodyLarge" style={styles.radioLabel}>
-                  OpenAI GPT-4 Vision
-                </Text>
-                <Text variant="bodySmall" style={styles.radioDescription}>
-                  Advanced image analysis with detailed fault detection
-                </Text>
-              </View>
-            </View>
-            <Divider style={styles.radioDivider} />
-            <View style={styles.radioItem}>
               <RadioButton.Android value="gemini" />
               <View style={styles.radioContent}>
                 <Text variant="bodyLarge" style={styles.radioLabel}>
@@ -77,6 +65,19 @@ export function AIProviderSelectorCard({ selectedAI, onSelectAI }: AIProviderSel
               </View>
             </View>
             <Divider style={styles.radioDivider} />
+            <View style={styles.radioItem}>
+              <RadioButton.Android value="openai" />
+              <View style={styles.radioContent}>
+                <Text variant="bodyLarge" style={styles.radioLabel}>
+                  OpenAI GPT-5.2 Pro
+                </Text>
+                <Text variant="bodySmall" style={styles.radioDescription}>
+                  Advanced image analysis with detailed fault detection
+                </Text>
+              </View>
+            </View>
+            <Divider style={styles.radioDivider} />
+
             <View style={styles.radioItem}>
               <RadioButton.Android value="grok" />
               <View style={styles.radioContent}>

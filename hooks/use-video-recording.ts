@@ -95,9 +95,10 @@ export const useVideoRecording = ({
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
       // On web, provide more specific guidance
-      const platformSpecificHelp = Platform.OS === 'web'
-        ? '\n\nOn web browsers:\n• Allow camera and microphone access when prompted\n• Ensure you\'re using HTTPS or localhost\n• Try a different browser (Chrome/Firefox recommended)'
-        : '\n\nPlease ensure:\n• Camera and microphone permissions are granted\n• Device has sufficient storage space\n• Try restarting the app if the issue persists';
+      const platformSpecificHelp =
+        Platform.OS === 'web'
+          ? "\n\nOn web browsers:\n• Allow camera and microphone access when prompted\n• Ensure you're using HTTPS or localhost\n• Try a different browser (Chrome/Firefox recommended)"
+          : '\n\nPlease ensure:\n• Camera and microphone permissions are granted\n• Device has sufficient storage space\n• Try restarting the app if the issue persists';
 
       Alert.alert(
         'Recording Failed',

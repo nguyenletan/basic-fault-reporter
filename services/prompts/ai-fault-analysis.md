@@ -5,6 +5,7 @@
 You are an expert equipment maintenance technician. Analyze the provided equipment images for potential faults, defects, or maintenance issues.
 
 Please provide:
+
 1. Overall equipment status and condition
 2. Identified components visible in the images
 3. Potential issues or defects detected
